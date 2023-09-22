@@ -11,8 +11,8 @@ import OpenAISwift
 struct MainView: View {
     
     @State private var chatText = ""
+    @State private var isSearching : Bool = false
     @EnvironmentObject private var model: Model
-//    @State private var answers : [String] = []
     
     let openAI = OpenAISwift(config: OpenAISwift.Config.makeDefaultOpenAI(apiKey: ""))
     
@@ -37,11 +37,12 @@ struct MainView: View {
                 } catch {
                     print(error.localizedDescription)
                 }
-//                answers.append(answer)
                 
                 chatText = ""
+                isSearching = false
             case .failure(let failure):
                 print(failure)
+                isSearching = false
             }
         }
     }
@@ -61,6 +62,7 @@ struct MainView: View {
                         .id(query.id)
                         .listRowSeparator(.hidden)
                     }.listStyle(.plain)
+                    #if os(iOS)
                         .onChange(of: model.queries) { oldValue, newValue in
                             if !model.queries.isEmpty {
                                 let lastQuery = model.queries[model.queries.endIndex - 1]
@@ -70,6 +72,19 @@ struct MainView: View {
                                 }
                             }
                         }
+                    #else
+                        // this will be updated with macos  14.0 sonoma
+                        .onChange(of: model.queries) { query in
+                            if !model.queries.isEmpty {
+                                let lastQuery = model.queries[model.queries.endIndex - 1]
+                                
+                                withAnimation {
+                                    proxi.scrollTo(lastQuery.id)
+                                }
+                            }
+                        }
+                    
+                    #endif
                 }
             }.padding()
             
@@ -79,7 +94,7 @@ struct MainView: View {
                 TextField("Search...", text: $chatText)
                     .textFieldStyle(.roundedBorder)
                 Button {
-                    // action
+                    isSearching = true
                     performSearch()
                 } label: {
                     Image(systemName: "paperplane.circle.fill")
@@ -90,8 +105,20 @@ struct MainView: View {
                     .disabled(!isFormValid)
             }
         }.padding()
+        #if os(iOS)
             .onChange(of: model.query) { oldValue, newValue in
                 model.queries.append(newValue)
+            }
+        #else
+            // this will be updated with macos  14.0 sonoma
+            .onChange(of: model.query) { newValue in
+                model.queries.append(newValue)
+            }
+        #endif
+            .overlay(alignment : .center){
+                if isSearching {
+                    ProgressView("Searching...")
+                }
             }
     }
 }
