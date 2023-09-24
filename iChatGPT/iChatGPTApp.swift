@@ -1,14 +1,14 @@
 //
-//  iChatGPT_iOSApp.swift
-//  iChatGPT-iOS
+//  iChatGPTApp.swift
+//  iChatGPT
 //
-//  Created by Jhonnier Zapata on 9/20/23.
+//  Created by Jhonnier Zapata on 9/24/23.
 //
 
 import SwiftUI
 
 @main
-struct iChatGPT_iOSApp: App {
+struct iChatGPTApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

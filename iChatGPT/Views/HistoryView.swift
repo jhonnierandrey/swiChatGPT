@@ -2,13 +2,13 @@
 //  HistoryView.swift
 //  iChatGPT
 //
-//  Created by Jhonnier Zapata on 9/21/23.
+//  Created by Jhonnier Zapata on 9/24/23.
 //
 
 import SwiftUI
 
 struct HistoryView: View {
-    
+    @Environment(\.colorScheme) var colorSchema
     @EnvironmentObject private var model : Model
     @Environment(\.dismiss) private var dismiss
     
@@ -21,9 +21,7 @@ struct HistoryView: View {
                 .contentShape(Rectangle())
                 .onTapGesture {
                     model.query = Query(question: historyItem.question ?? "", answer: historyItem.answer ?? "")
-                    #if os(iOS)
-                            dismiss()
-                    #endif
+                    dismiss()
                 }
         }
     }
@@ -32,4 +30,5 @@ struct HistoryView: View {
 #Preview {
     HistoryView()
         .environmentObject(Model())
+        .environment(\.colorScheme, .dark)
 }

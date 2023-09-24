@@ -2,16 +2,16 @@
 //  MainView.swift
 //  iChatGPT
 //
-//  Created by Jhonnier Zapata on 9/20/23.
+//  Created by Jhonnier Zapata on 9/24/23.
 //
 
 import SwiftUI
 import OpenAISwift
 
 struct MainView: View {
-    
     @State private var chatText = ""
     @State private var isSearching : Bool = false
+    @FocusState private var searchIsFocused: Bool
     @EnvironmentObject private var model: Model
     
     let openAI = OpenAISwift(config: OpenAISwift.Config.makeDefaultOpenAI(apiKey: ""))
@@ -20,13 +20,13 @@ struct MainView: View {
         !chatText.isEmptyOrWhiteSpace
     }
     
-    private func performSearch() {
-        openAI.sendCompletion(with: chatText, maxTokens: 500) { result in
+    private func performSearch(chatTextInput : String) {
+        openAI.sendCompletion(with: chatTextInput, maxTokens: 500) { result in
             switch result {
             case .success(let success):
                 let answer = success.choices?.first?.text.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
                 
-                let query = Query(question: chatText, answer: answer)
+                let query = Query(question: chatTextInput, answer: answer)
                 
                 DispatchQueue.main.async {
                     model.queries.append(query)
@@ -38,7 +38,6 @@ struct MainView: View {
                     print(error.localizedDescription)
                 }
                 
-                chatText = ""
                 isSearching = false
             case .failure(let failure):
                 print(failure)
@@ -53,17 +52,24 @@ struct MainView: View {
                 ScrollViewReader { proxi in
                     ForEach(model.queries) { query in
                         VStack(alignment: .leading) {
-                            Text(query.question)
-                                .fontWeight(/*@START_MENU_TOKEN@*/.bold/*@END_MENU_TOKEN@*/)
-                            Text(query.answer)
+                            ChatBubble(direction: .right) {
+                                Text(query.question)
+                                    .padding(.all, 10)
+                                    .foregroundColor(Color.white)
+                                    .background(Color.blue)
+                            }
+                            ChatBubble(direction: .left) {
+                                Text(query.answer)
+                                    .padding(.all, 10)
+                                    .foregroundColor(Color.white)
+                                    .background(.gray)
+                            }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding([.bottom], 10)
                         .id(query.id)
                         .listRowSeparator(.hidden)
-                    }.listStyle(.plain)
-                    #if os(iOS)
-                        .onChange(of: model.queries) { oldValue, newValue in
+                    }.onChange(of: model.queries) { oldValue, newValue in
                             if !model.queries.isEmpty {
                                 let lastQuery = model.queries[model.queries.endIndex - 1]
                                 
@@ -72,54 +78,40 @@ struct MainView: View {
                                 }
                             }
                         }
-                    #else
-                        // this will be updated with macos  14.0 sonoma
-                        .onChange(of: model.queries) { query in
-                            if !model.queries.isEmpty {
-                                let lastQuery = model.queries[model.queries.endIndex - 1]
-                                
-                                withAnimation {
-                                    proxi.scrollTo(lastQuery.id)
-                                }
-                            }
-                        }
-                    
-                    #endif
                 }
             }.padding()
-            
             
             Spacer()
             HStack {
                 TextField("Search...", text: $chatText)
+                    .focused($searchIsFocused)
                     .textFieldStyle(.roundedBorder)
                 Button {
                     isSearching = true
-                    performSearch()
+                    searchIsFocused = false
+                    performSearch(chatTextInput: chatText)
+                    chatText = ""
                 } label: {
-                    Image(systemName: "paperplane.circle.fill")
+                    Image(systemName: "arrow.up.circle.fill")
                         .font(.title)
-                        .rotationEffect(Angle(degrees: 45))
                 }.buttonStyle(.borderless)
-                    .tint(.blue)
+                    .tint(.green)
                     .disabled(!isFormValid)
             }
         }.padding()
-        #if os(iOS)
-            .onChange(of: model.query) { oldValue, newValue in
-                model.queries.append(newValue)
-            }
-        #else
-            // this will be updated with macos  14.0 sonoma
-            .onChange(of: model.query) { newValue in
-                model.queries.append(newValue)
-            }
-        #endif
-            .overlay(alignment : .center){
-                if isSearching {
-                    ProgressView("Searching...")
+            .onTapGesture {
+                if searchIsFocused {
+                    searchIsFocused = false
                 }
             }
+        .onChange(of: model.query) { oldValue, newValue in
+            model.queries.append(newValue)
+        }
+        .overlay(alignment : .center){
+            if isSearching {
+                ProgressView("Searching...")
+            }
+        }
     }
 }
 

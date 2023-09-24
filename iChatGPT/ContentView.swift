@@ -1,17 +1,19 @@
 //
 //  ContentView.swift
-//  iChatGPT-iOS
+//  iChatGPT
 //
-//  Created by Jhonnier Zapata on 9/20/23.
+//  Created by Jhonnier Zapata on 9/24/23.
 //
 
 import SwiftUI
 
 struct ContentView: View {
     @State private var isPresented: Bool = false
+    
     var body: some View {
         NavigationStack {
             MainView()
+                .navigationTitle("iChatGPT")
                 .sheet(isPresented: $isPresented, content: {
                     NavigationStack {
                         HistoryView()
@@ -23,10 +25,11 @@ struct ContentView: View {
                         Button {
                             isPresented = true
                         } label: {
-                            Text("Show history")
+                            Text("History")
                         }
                     }
                 }
+                
         }
     }
 }
